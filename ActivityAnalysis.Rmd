@@ -1,0 +1,18 @@
+---
+title: "Predict the manner in which exercise is done"
+---
+
+### Executive Summary
+
+### Exploratory Analysis
+
+
+### Data Cleanup
+
+### Machine learning algorithm 
+#### Model 
+#### Prediction
+#### Sample error and cross-validation
+
+### Conclusions
+
