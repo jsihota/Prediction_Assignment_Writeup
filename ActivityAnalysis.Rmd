@@ -7,7 +7,7 @@ Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible t
 
 The goal of this project was to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset). 
 
-Using Random Forest Modeling, I got over 99% accuracy on training set of 70% of the total data.
+Using Random Forest Modeling, got over 99% accuracy on training set of 70% of the total data.
 
 
 
@@ -38,37 +38,87 @@ sum(complete.cases(testData))
 nearZeroVar(trainingData)
 nearZeroVar(testData)
 ```
+
 #### Data Cleanup
+The following transformations were used to clean the data:
+
+
 ```{r  tidy=FALSE, comment=NA, echo=TRUE, message=FALSE, warning=FALSE}
+#Transformation 1: Cleaning Variables with too many NAs
 NAs <- apply(trainingData, 2, function(x) {
   sum(is.na(x))
 })
-
 cleanTrainingData <- trainingData[, which(NAs == 0)]
 cleanTestData <- testData[, which(NAs == 0)]
+# Transformation 2: Removing variables that have time, or names in it, also new_window.
+removeIndex <- as.integer(c(1, 2, 3, 4, 5, 6))
+cleanTrainingData <- cleanTrainingData[, -removeIndex]
+cleanTestData <- cleanTestData[, -removeIndex]
 
-##Using 70% for training and 30% for Cross Validation. None generated for testing since that set is already provided.
+
+##Using 70% for training and 30% for Cross Validation. None generated for testing since that set is already provided
 trainIndex <- createDataPartition(y = cleanTrainingData$classe, p = 0.7, list = FALSE)
 trainSet <- cleanTrainingData[trainIndex, ]
 crossValidationSet <- cleanTrainingData[-trainIndex, ]
-# Removing variables that have time, or names in it, also new_window.
-# Columns 1..6
-removeIndex <- as.integer(c(1, 2, 3, 4, 5, 6))
-trainSet <- trainSet[, -removeIndex]
-testSet <- cleanTestData[, -removeIndex]
-crossValidationSet <- crossValidationSet[, -removeIndex]
+testSet <- cleanTestData
 
+
+#check for dim
 dim(trainSet)
 dim(testSet)
-dim(crossValidationSet)
+
+
 ```
 
 
 
 
 ### Model 
+Random forest trees were generated for the training dataset using cross-validatio using 51 predictors for five classes using cross-validation at a 5-fold 
 #### Prediction
+```{r  tidy=FALSE, comment=NA, echo=TRUE, message=FALSE, warning=FALSE}
+library(randomForest)
+library(caret)
+set.seed(12233)
+fitControl<-trainControl(method="cv", number=5, allowParallel=T, verbose=F)
+modelFit <- train(trainSet$classe ~ ., data = trainSet, method = "rf", trControl = fitControl)
+modelFit
+
+```
+
 #### Sample error and cross-validation
+```{r  tidy=FALSE, comment=NA, echo=TRUE, message=FALSE, warning=FALSE}
+library(randomForest)
+library(caret)
+set.seed(12233)
+predicted <- predict(modelFit, crossValidationSet)
+sampleError <- sum(predicted == crossValidationSet$classe)/nrow(crossValidationSet)
+#Out of Sample Error: 
+sampleError
+confusionMatrix(predicted, crossValidationSet$classe)
+```
+### Test data Prediction
+```{r  tidy=FALSE, comment=NA, echo=TRUE, message=FALSE, warning=FALSE}
+library(randomForest)
+library(caret)
+set.seed(12233)
+answers <- predict(modelFit, testSet)
+answers
+#Function to generate files with predictions to submit for assignment
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(answers)
+
+```
+
 
 ### Conclusions
+Using Random Forest Modeling, got over 99% accuracy on training set of 70% of the total data.
+
 
